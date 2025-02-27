@@ -110,11 +110,46 @@ app.get('/post', (req, res) => {
             return res.status(500).json({ error: err.message });
         }
         if (!rows || rows.length === 0) {
-            return res.status(404).json({ message: 'Post not found' });
+            return res.status(404).json({ message: '게시글이 존재하지 않습니다.' });
         }
         res.json(rows);
     });
 });
+
+
+// 상세 게시글 조회
+app.get("/post/:postId", (req, res) => {
+    const { postId } = req.params;
+    console.log("Received postId:", postId);
+
+    const query = `
+         SELECT 
+            p.post_id, p.publisher, p.updated_date,
+            t.thesis_id, t.title AS thesis_title, 
+            t.content AS thesis_content,
+            t.submission_date,
+            c.conference_id, c.conference_name, c.type AS conference_type
+        FROM post_info p
+        JOIN thesis t ON p.post_id = t.post_id
+        JOIN conference c ON t.conference_id = c.conference_id
+        JOIN thesis_author a ON t.thesis_id = a.thesis_id
+        WHERE p.post_id = ?
+    `;
+
+    db.get(query, [postId], (err, rows) => {
+        if (err) {
+            console.error("Database error:", err);
+            return res.status(500).json({ error: "서버 오류가 발생했습니다." });
+        }
+
+        if (!rows) {
+            return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
+        }
+
+        res.json(rows);
+    });
+});
+
 
 
 // 논문 게시글 수정
